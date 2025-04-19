@@ -25,8 +25,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     BullModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
         redis: {
-          host: configService.get('REDIS_HOST'),
-          port: configService.get('REDIS_PORT'),
+          host: configService.get('REDISHOST'),
+          port: configService.get('REDISPORT'),
           password: configService.get('REDIS_PASSWORD'),
         },
       }),

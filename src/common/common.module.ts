@@ -12,8 +12,8 @@ const configService = new ConfigService();
     BullModule.registerQueue({
       name: MAIL_QUEUE,
       redis: {
-        host: configService.get('REDIS_HOST'),
-        port: configService.get('REDIS_PORT'),
+        host: configService.get('REDISHOST'),
+        port: configService.get('REDISPORT'),
         password: configService.get('REDIS_PASSWORD'),
       },
     }),
