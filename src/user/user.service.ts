@@ -30,6 +30,7 @@ import { UserType } from './enums';
 import { EmailService } from 'src/common/services/';
 import { OrganizationService } from 'src/organization/organization.service';
 import { REGISTER_EMAIL_JOB } from 'src/common/constants';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UserService {
@@ -110,7 +111,9 @@ export class UserService {
 
     await this.emailService.sendEmail(emailData, REGISTER_EMAIL_JOB);
 
-    return new UserSerializer(savedUser);
+    return plainToInstance(UserSerializer, savedUser, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async createUser(
