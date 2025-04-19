@@ -30,7 +30,6 @@ import { JwtAuthGuard } from 'src/auth/guards';
 
 @Controller('users')
 @ApiTags('Users')
-@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private userService: UserService) {}
 
@@ -44,6 +43,7 @@ export class UserController {
   @Post('create/:id')
   @ApiOperation({ summary: 'Create a user' })
   @ResponseMessage(USER_CREATED)
+  @UseGuards(JwtAuthGuard)
   async createUser(
     @Body() createUserDTO: CreateUserDTO,
     @Param('id') id: string,
@@ -54,6 +54,7 @@ export class UserController {
   @Get('')
   @ApiOperation({ summary: 'Get users' })
   @ResponseMessage(USERS_FETCHED)
+  @UseGuards(JwtAuthGuard)
   async getUsers(@Query() listFilterDTO: ListFilterDTO) {
     return this.userService.getUsers(listFilterDTO);
   }
@@ -61,6 +62,7 @@ export class UserController {
   @Get(':id')
   @ApiOperation({ summary: 'Get user by id' })
   @ResponseMessage(USER_FETCHED)
+  @UseGuards(JwtAuthGuard)
   async getUser(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     const user = await this.userService.getUser(id);
     return user;
@@ -68,6 +70,7 @@ export class UserController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a user' })
+  @UseGuards(JwtAuthGuard)
   async updateUser(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDTO: UpdateUserDTO,
@@ -78,6 +81,7 @@ export class UserController {
   @Patch(':id/activate')
   @ApiOperation({ summary: 'Activate user' })
   @ResponseMessage(USER_ACTIVATED)
+  @UseGuards(JwtAuthGuard)
   async activateUser(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
@@ -87,6 +91,7 @@ export class UserController {
   @Patch(':id/deactivate')
   @ApiOperation({ summary: 'Deactivate user' })
   @ResponseMessage(USER_DEACTIVATED)
+  @UseGuards(JwtAuthGuard)
   async deactivateUser(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
@@ -96,6 +101,7 @@ export class UserController {
   @Patch(':id/activate-2fa')
   @ApiOperation({ summary: 'Activate two factor authentication' })
   @ResponseMessage(USER_2FA_ACTIVATED)
+  @UseGuards(JwtAuthGuard)
   async activate2FA(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
@@ -105,6 +111,7 @@ export class UserController {
   @Patch(':id/deactivate-2fa')
   @ApiOperation({ summary: 'Deactivate two factor authentication' })
   @ResponseMessage(USER_2FA_DEACTIVATED)
+  @UseGuards(JwtAuthGuard)
   async deactivate2FA(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
@@ -114,6 +121,7 @@ export class UserController {
   @Patch(':id/change-password')
   @ApiOperation({ summary: 'Change user password' })
   @ResponseMessage('Password changed successfully')
+  @UseGuards(JwtAuthGuard)
   async changePassword(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() changePasswordDto: ChangePasswordDTO,
@@ -124,6 +132,7 @@ export class UserController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete user' })
   @ResponseMessage(USER_DELETED)
+  @UseGuards(JwtAuthGuard)
   async deleteUser(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
