@@ -1,0 +1,5 @@
+export enum UserType {
+  SYSTEM_USER = 'SYSTEM_USER',
+  SITE_MANAGER = 'SITE_MANAGER',
+  SITE_AGENT = 'SITE_AGENT',
+}

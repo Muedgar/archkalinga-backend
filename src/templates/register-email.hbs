@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to ArchKalinga</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0f172a;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #ffffff;
+    }
+
+    p {
+      color: white;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .header {
+      background-color: #0ea5e9;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .content {
+      padding: 32px;
+    }
+
+    .content p {
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 0 0 20px;
+    }
+
+    .credentials {
+      background-color: #334155;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+
+    .credentials strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #38bdf8;
+    }
+
+    .button {
+      display: inline-block;
+      background-color: #14b8a6;
+      color: #ffffff;
+      padding: 14px 28px;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .footer {
+      padding: 24px;
+      text-align: center;
+      font-size: 14px;
+      background-color: #0f172a;
+      color: #94a3b8;
+    }
+
+    @media (max-width: 600px) {
+      .content, .header, .footer {
+        padding: 16px;
+      }
+
+      .button {
+        display: block;
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Welcome to ArchKalinga 🎉</h1>
+    </div>
+    <div class="content">
+      <p>Hello {{data.firstName}},</p>
+      <p>We’re thrilled to have you onboard. ArchKalinga is here to make construction scheduling a breeze. Your account is ready to go!</p>
+
+      <div class="credentials">
+        <strong>Email:</strong> <p>{{data.email}}</p>
+        <strong>Password:</strong> <p>{{data.password}}</p>
+      </div>
+
+      <a href="{{data.clientUrl}}/auth/login" target="_blank" class="button">Access Your Account →</a>
+
+      <p style="margin-top: 32px;">If you didn’t sign up for ArchKalinga, you can ignore this email.</p>
+    </div>
+    <div class="footer">
+      Thanks for joining us!<br />
+      — The ArchKalinga Team
+    </div>
+  </div>
+</body>
+</html>
