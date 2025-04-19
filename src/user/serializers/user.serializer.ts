@@ -1,7 +1,7 @@
 import { Exclude, Expose, Type } from 'class-transformer';
 import { BaseSerializer } from 'src/common/serializers';
-import { RoleUserSerializer } from './role.serializer';
 import { RoleSerializer } from 'src/role/serializers';
+import { OrganizationSerializer } from 'src/organization/serializers';
 
 export class UserSerializer extends BaseSerializer {
   @Expose()
@@ -20,16 +20,8 @@ export class UserSerializer extends BaseSerializer {
   title: string;
 
   @Expose()
-  organizationName: string;
-
-  @Expose()
-  organizationAddress: string;
-
-  @Expose()
-  organizationCity: string;
-
-  @Expose()
-  organizationCountry: string;
+  @Type(() => OrganizationSerializer)
+  organization: OrganizationSerializer;
 
   @Expose()
   status: boolean;
