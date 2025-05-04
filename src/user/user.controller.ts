@@ -27,6 +27,8 @@ import {
 } from './messages';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/guards';
+import { GetUser } from 'src/auth/decorators';
+import { User } from './entities';
 
 @Controller('users')
 @ApiTags('Users')
@@ -40,15 +42,15 @@ export class UserController {
     return this.userService.registerUser(registerUserDTO);
   }
 
-  @Post('create/:id')
+  @Post('create')
   @ApiOperation({ summary: 'Create a user' })
   @ResponseMessage(USER_CREATED)
   @UseGuards(JwtAuthGuard)
   async createUser(
     @Body() createUserDTO: CreateUserDTO,
-    @Param('id') id: string,
+    @GetUser() user: User,
   ) {
-    return this.userService.createUser(createUserDTO, id);
+    return this.userService.createUser(createUserDTO, user.id);
   }
 
   @Get('')
