@@ -154,6 +154,17 @@ export class UserService {
 
     const savedUser = await this.userRepository.save(user);
     // send email
+    const emailData: Mail = {
+      to: savedUser.email,
+      data: {
+        firstName: savedUser.firstName,
+        email: savedUser.email,
+        password,
+      },
+    };
+
+    await this.emailService.sendEmail(emailData, REGISTER_EMAIL_JOB);
+
     return new UserSerializer(savedUser);
   }
 
