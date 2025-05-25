@@ -13,7 +13,7 @@ import { JwtAuthGuard } from 'src/auth/guards';
 import { Response } from 'express';
 
 @Controller('reports')
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 

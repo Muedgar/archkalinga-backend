@@ -142,6 +142,10 @@ export class TasksService {
       task.name = updateTaskDto.name;
     }
 
+    if (updateTaskDto.projectId) {
+      task.project = project;
+    }
+
     const savedTask = await this.taskRepository.save(task);
 
     return savedTask;

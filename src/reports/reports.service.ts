@@ -570,7 +570,7 @@ export class ReportsService {
       entry.total += qty.amount;
       entry.tasks.push({
         Task: qty.task.name,
-        User: qty.quantity.createdBy?.userName || 'Unknown',
+        User: `${qty.quantity.createdBy?.lastName || ''}`,
         Quantity: qty.amount,
       });
     }

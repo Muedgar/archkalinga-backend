@@ -5,11 +5,6 @@ export class CreateQuantityDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsUUID()
-  createdById: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsUUID()
   itemId: string;
 
   @ApiProperty()

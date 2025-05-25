@@ -15,6 +15,7 @@ import { ListFilterDTO } from 'src/common/dtos';
 import { FilterResponse } from 'src/common/interfaces';
 import { ListFilterService } from 'src/common/services';
 import { plainToInstance } from 'class-transformer';
+import { User } from 'src/user/entities';
 
 @Injectable()
 export class QuantitiesService {
@@ -27,13 +28,11 @@ export class QuantitiesService {
     private shellService: ShellsheduleService,
     private taskService: TasksService,
   ) {}
-  async create(createQuantityDto: CreateQuantityDto) {
+  async create(createQuantityDto: CreateQuantityDto, requestUser: User) {
     // get task
     const task = await this.taskService.findOne(createQuantityDto.taskId);
     // get user
-    const createdBy = await this.userService.getUser(
-      createQuantityDto.createdById,
-    );
+    const createdBy = await this.userService.getUser(requestUser.id);
 
     // check if this user is in the assigned users for this task
 
@@ -119,7 +118,16 @@ export class QuantitiesService {
       where: {
         id,
       },
-      relations: ['createdBy', 'itemTaskQuantity'],
+      relations: [
+        'createdBy',
+        'itemTaskQuantity',
+        'itemTaskQuantity.item',
+        'itemTaskQuantity.item.shellSubCategory',
+        'itemTaskQuantity.item.shellSubCategory.shellCategory',
+        'itemTaskQuantity.item.shellSubCategory.shellCategory.shellPhase',
+        'itemTaskQuantity.task',
+        'itemTaskQuantity.task.project',
+      ],
     });
 
     if (!existingQuantity) throw new BadRequestException('Quantity not found');
@@ -152,7 +160,7 @@ export class QuantitiesService {
     id: string,
     updateQuantityDto: UpdateQuantityDto,
   ): Promise<ItemTaskToQuantitySerializer> {
-    // one can only update ItemTaskToQuantity amount or unit
+    // one can only update ItemTaskToQuantity amount
     // create item task to quantity
     const itemTaskToQuantity = await this.itemTaskToQuantityRepository.findOne({
       where: {
@@ -166,9 +174,7 @@ export class QuantitiesService {
     if (updateQuantityDto.amount) {
       itemTaskToQuantity.amount = Number(updateQuantityDto.amount);
     }
-    if (updateQuantityDto.unit) {
-      itemTaskToQuantity.unit = updateQuantityDto.unit;
-    }
+
     const savedItemTaskToQuantity =
       await this.itemTaskToQuantityRepository.save(itemTaskToQuantity);
     return new ItemTaskToQuantitySerializer(savedItemTaskToQuantity);

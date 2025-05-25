@@ -14,15 +14,20 @@ import { CreateQuantityDto } from './dto/create-quantity.dto';
 import { UpdateQuantityDto } from './dto/update-quantity.dto';
 import { JwtAuthGuard } from 'src/auth/guards';
 import { ListFilterDTO } from 'src/common/dtos';
+import { GetUser } from 'src/auth/decorators';
+import { User } from 'src/user/entities';
 
-@Controller('quantities')
+@Controller('shell/quantities')
 @UseGuards(JwtAuthGuard)
 export class QuantitiesController {
   constructor(private readonly quantitiesService: QuantitiesService) {}
 
   @Post()
-  create(@Body() createQuantityDto: CreateQuantityDto) {
-    return this.quantitiesService.create(createQuantityDto);
+  create(
+    @Body() createQuantityDto: CreateQuantityDto,
+    @GetUser() requestUser: User,
+  ) {
+    return this.quantitiesService.create(createQuantityDto, requestUser);
   }
 
   @Get()

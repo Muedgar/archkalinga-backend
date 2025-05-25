@@ -55,6 +55,7 @@ export class RoleService {
     await this.doesRoleExists(roleData.name);
 
     const role = this.roleRepository.create({ ...roleData });
+    role.status = true;
     const savedRole = await this.roleRepository.save(role);
 
     return new RoleSerializer(savedRole);
@@ -63,17 +64,20 @@ export class RoleService {
   async getRole(id: string): Promise<Role> {
     const role = await this.roleRepository.findOne({
       where: { id },
-      relations: ['permissions'],
+      relations: ['permissions'], // 👈 this will load all related permissions
       select: {
-        permissions: {
-          id: true,
-          name: true,
-        },
+        pkid: true,
+        name: true,
+        status: true,
+        slug: true,
+        // ❌ don't try to select nested fields here
       },
     });
+
     if (!role) {
       throw new NotFoundException(ROLE_NOT_FOUND);
     }
+
     return role;
   }
 
@@ -121,10 +125,9 @@ export class RoleService {
       const existingRole = await this.roleRepository.findOne({
         where: { name: updateRoleDTO.name },
       });
-      if (existingRole && role.id !== existingRole.id) {
+      if (existingRole && id !== existingRole.id) {
         throw new ConflictException(ROLE_EXISTS);
       }
-
       role.name = updateRoleDTO.name;
       role.slug = updateRoleDTO.name.replace(/\s+/g, '-').toLowerCase();
     }
@@ -161,6 +164,7 @@ export class RoleService {
   async deactivateRole(id: string): Promise<RoleSerializer> {
     const role = await this.getRole(id);
     if (!role.status) {
+      // true => false
       throw new BadRequestException(ROLE_ALREADY_DEACTIVATED);
     }
 

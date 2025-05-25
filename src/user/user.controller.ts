@@ -29,6 +29,7 @@ import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/guards';
 import { GetUser } from 'src/auth/decorators';
 import { User } from './entities';
+import { UserSerializer } from './serializers';
 
 @Controller('users')
 @ApiTags('Users')
@@ -67,6 +68,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async getUser(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     const user = await this.userService.getUser(id);
+    user.password = '';
     return user;
   }
 
