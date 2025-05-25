@@ -53,7 +53,7 @@ export class RoleController {
   @ResponseMessage(ROLE_FETCHED)
   async getRole(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     const role = await this.roleService.getRole(id);
-    return new RoleSerializer(role);
+    return role;
   }
 
   @Patch(':id')

@@ -14,6 +14,11 @@ import { join } from 'path';
 import { OrganizationModule } from './organization/organization.module';
 import { AuthModule } from './auth/auth.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ShellsheduleModule } from './shellshedule/shellshedule.module';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
+import { QuantitiesModule } from './quantities/quantities.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -61,6 +66,11 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     UserModule,
     OrganizationModule,
     AuthModule,
+    ShellsheduleModule,
+    ProjectsModule,
+    TasksModule,
+    QuantitiesModule,
+    ReportsModule,
   ],
   controllers: [],
   providers: [],

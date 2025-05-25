@@ -2,11 +2,24 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Organization } from 'src/organization/entities/organization.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
+import { Project } from 'src/projects/entities/project.entity';
+import { ItemTaskToQuantity } from 'src/quantities/entities/item-task-quantity.entity';
+import { Quantity } from 'src/quantities/entities/quantity.entity';
 import { Role } from 'src/role/role.entity';
+import { Task } from 'src/tasks/entities';
 import { User } from 'src/user/entities';
 import { Repository } from 'typeorm';
 
-const entityClasses = [Permission, Role, User, Organization];
+const entityClasses = [
+  Permission,
+  Role,
+  User,
+  Organization,
+  Project,
+  Quantity,
+  ItemTaskToQuantity,
+  Task,
+];
 
 @Injectable()
 export class PermissionSeederService {

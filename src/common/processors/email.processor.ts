@@ -29,9 +29,7 @@ export class EmailProcessor {
           data: data.data,
         },
       })
-      .then(() => {
-        console.log('email send successfully');
-      })
+      .then(() => {})
       .catch((e) => {
         console.log(e);
       });
