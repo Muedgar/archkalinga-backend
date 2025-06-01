@@ -14,8 +14,9 @@ export class RoleSeederService {
   ) {}
 
   async createSuperAdmin(): Promise<Role> {
-    const name = 'Super Admin';
-    const slug = 'super-admin';
+    const uniqueName = `super-admin-${Date.now()}`;
+    const name = `Super Admin ${Date.now()}`;
+    const slug = uniqueName;
 
     const existingRole = await this.roleRepository.findOne({
       where: {
