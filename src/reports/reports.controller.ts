@@ -17,7 +17,7 @@ import { Response } from 'express';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  @Get('total-item-usage')
+  @Get('shell-schedule/total-item-usage')
   async getTotalItemUsage(
     @Query('itemId') itemId: string,
     @Query('projectId') projectId: string,
@@ -28,7 +28,7 @@ export class ReportsController {
     return this.reportsService.getTotalItemUsageAcrossTasks(itemId, projectId);
   }
 
-  @Get('item-task-breakdown')
+  @Get('shell-schedule/item-task-breakdown')
   async getItemTaskBreakdown(
     @Query('itemId') itemId: string,
     @Query('projectId') projectId: string,
@@ -42,7 +42,7 @@ export class ReportsController {
     );
   }
 
-  @Get('user-item-usage')
+  @Get('shell-schedule/user-item-usage')
   async getUserItemUsage(
     @Query('userId') userId: string,
     @Query('itemId') itemId: string,
@@ -60,7 +60,7 @@ export class ReportsController {
     );
   }
 
-  @Get('item-user-contributions')
+  @Get('shell-schedule/item-user-contributions')
   async getItemUserContributions(
     @Query('itemId') itemId: string,
     @Query('projectId') projectId: string,
@@ -89,5 +89,12 @@ export class ReportsController {
         projectId,
       );
     res.send(buffer);
+  }
+
+  @Get('shell-schedule/:projectId/json')
+  async jsonShellSchedule(@Param('projectId') projectId: string): Promise<any> {
+    return await this.reportsService.generateShellScheduleTreeForProject(
+      projectId,
+    );
   }
 }

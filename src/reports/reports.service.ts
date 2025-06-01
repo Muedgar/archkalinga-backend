@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ProjectsService } from 'src/projects/projects.service';
 import { QuantitiesService } from 'src/quantities/quantities.service';
-import { ShellItem } from 'src/shellshedule/entities/shellitems.entity';
 import { ShellsheduleService } from 'src/shellshedule/shellshedule.service';
 import { TasksService } from 'src/tasks/tasks.service';
 import { In } from 'typeorm';
@@ -41,6 +40,7 @@ export class ReportsService {
       });
 
     return {
+      itemId: item.id,
       item: item.description,
       unit: item.unit,
       total: quantitiesForThisItem.reduce((sum, q) => sum + q.amount, 0),
@@ -171,7 +171,9 @@ export class ReportsService {
 
     return {
       project: project.name,
-      user: quantities[0]?.quantity?.createdBy?.userName || 'Unknown User',
+      user: quantities[0]?.quantity?.createdBy
+        ? `${quantities[0].quantity.createdBy.firstName} ${quantities[0].quantity.createdBy.lastName}`
+        : 'Unknown User',
       item: item.description,
       unit: item.unit,
       assignments: userAssignments,
@@ -231,7 +233,7 @@ export class ReportsService {
         } else {
           acc.push({
             userId: user.id,
-            userName: user.userName,
+            userName: `${user.firstName} ${user.lastName}`,
             contributions: [contribution],
           });
         }
@@ -249,285 +251,108 @@ export class ReportsService {
     };
   }
 
-  // async generateShellScheduleForASpecificProject(
-  //   projectId: string,
-  // ): Promise<Buffer> {
-  //   // 1. Get all tasks for this project
-  //   const tasks = await this.taskService.findWhere({
-  //     project: { id: projectId },
-  //   });
-  //   console.log('tasks: ', tasks);
-  //   if (!tasks.length)
-  //     throw new BadRequestException('No tasks found for this project');
+  async generateShellScheduleTreeForProject(projectId: string): Promise<any> {
+    const project = await this.projetService.getOne(projectId);
+    if (!project) throw new BadRequestException('Project not found');
 
-  //   // 2. Collect all ItemTaskToQuantity
-  //   const allItemQuantities = tasks.flatMap((task) =>
-  //     task.itemTaskQuantity.map((q) => ({
-  //       taskName: task.name,
-  //       item: q.item,
-  //       quantity: q.amount,
-  //       unit: q.unit,
-  //       subCategory: q.item.shellSubCategory,
-  //       category: q.item.shellSubCategory.shellCategory,
-  //       phase: q.item.shellSubCategory.shellCategory.shellPhase,
-  //     })),
-  //   );
+    const tasks = await this.taskService.findWhere({
+      project: { id: projectId },
+    });
+    const taskIds = tasks.map((task) => task.id);
+    if (!taskIds.length) {
+      throw new BadRequestException('No tasks found for this project');
+    }
 
-  //   // 3. Format the rows for Excel
-  //   const data = allItemQuantities.map((entry) => ({
-  //     Phase: entry.phase?.name || '',
-  //     Category: entry.category?.name || '',
-  //     Subcategory: entry.subCategory?.name || '',
-  //     'Item Description': entry.item.description,
-  //     References: (entry.item.references || []).join(', '),
-  //     ID: entry.item.identifierId,
-  //     Unit: entry.unit || entry.item.unit,
-  //     Quantity: entry.quantity,
-  //     Task: entry.taskName,
-  //   }));
+    const allQuantities =
+      await this.quantitiesService.findWhereItemTaskToQuantity({
+        task: { id: In(taskIds) },
+      });
 
-  //   // 4. Insert headers and avoid NaNs (empty values will remain blank)
-  //   const worksheet = XLSX.utils.json_to_sheet(data);
-  //   const workbook = XLSX.utils.book_new();
-  //   XLSX.utils.book_append_sheet(workbook, worksheet, 'Shell Schedule');
+    const allItems = await this.shellService.findAllItems();
 
-  //   // 5. Generate buffer to be returned or downloaded
-  //   const buffer = XLSX.write(workbook, {
-  //     bookType: 'xlsx',
-  //     type: 'buffer',
-  //   }) as Buffer;
-  //   return buffer;
-  // }
-  // async generateShellScheduleForASpecificProject(
-  //   projectId: string,
-  // ): Promise<Buffer> {
-  //   const project = await this.projetService.getOne(projectId);
-  //   if (!project) throw new BadRequestException('Project not found');
+    // Prepare usage map
+    const usageMap = new Map<
+      string,
+      {
+        total: number;
+        tasks: { taskName: string; userName: string; quantity: number }[];
+      }
+    >();
 
-  //   const tasks = await this.taskService.findWhere({
-  //     project: { id: projectId },
-  //   });
-  //   const taskIds = tasks.map((task) => task.id);
-  //   if (!taskIds.length)
-  //     throw new BadRequestException('No tasks found for this project');
+    for (const qty of allQuantities) {
+      const itemId = qty.item.id;
+      if (!usageMap.has(itemId)) {
+        usageMap.set(itemId, { total: 0, tasks: [] });
+      }
+      const entry = usageMap.get(itemId)!;
+      entry.total += qty.amount;
+      entry.tasks.push({
+        taskName: qty.task.name,
+        userName: qty.quantity.createdBy?.lastName || 'Unknown',
+        quantity: qty.amount,
+      });
+    }
 
-  //   const allQuantities =
-  //     await this.quantitiesService.findWhereItemTaskToQuantity({
-  //       task: { id: In(taskIds) },
-  //     });
+    // Build D3-compatible tree
+    type TreeLeaf = { id: string; quantity: number };
+    interface TreeNode {
+      id: string;
+      children: Array<TreeNode | TreeLeaf>;
+      [key: string]: any;
+    }
 
-  //   interface ItemUsageEntry {
-  //     Phase: string;
-  //     Category: string;
-  //     Subcategory: string;
-  //     Description: string;
-  //     References: string;
-  //     ID: string;
-  //     Unit: string;
-  //     TotalQuantity: number;
-  //     Tasks: { Task: string; User: string; Quantity: number }[];
-  //   }
+    const root: TreeNode = { id: project.name, children: [] };
 
-  //   const detailedData = allQuantities.map((qty) => ({
-  //     itemId: qty.item.id,
-  //     itemDescription: qty.item.description,
-  //     itemUnit: qty.unit || qty.item.unit,
-  //     itemIdentifierId: qty.item.identifierId,
-  //     taskName: qty.task.name,
-  //     taskId: qty.task.id,
-  //     quantity: qty.amount,
-  //     userName: qty.quantity.createdBy?.userName || 'Unknown',
-  //     subCategory: qty.item.shellSubCategory?.name || '',
-  //     category: qty.item.shellSubCategory?.shellCategory?.name || '',
-  //     phase: qty.item.shellSubCategory?.shellCategory?.shellPhase?.name || '',
-  //     references: qty.item.references?.join(', ') || '',
-  //   }));
+    const getOrCreate = (arr: TreeNode[], id: string): TreeNode => {
+      let node = arr.find((child) => child.id === id);
+      if (!node) {
+        node = { id, children: [] };
+        arr.push(node);
+      }
+      return node;
+    };
 
-  //   const itemMap = new Map<string, ItemUsageEntry>();
+    for (const item of allItems) {
+      const usage = usageMap.get(item.id); // May be undefined
 
-  //   for (const row of detailedData) {
-  //     if (!itemMap.has(row.itemId)) {
-  //       itemMap.set(row.itemId, {
-  //         Phase: row.phase,
-  //         Category: row.category,
-  //         Subcategory: row.subCategory,
-  //         Description: row.itemDescription,
-  //         References: row.references,
-  //         ID: `${row.itemIdentifierId}`,
-  //         Unit: row.itemUnit,
-  //         TotalQuantity: 0,
-  //         Tasks: [],
-  //       });
-  //     }
+      const phase =
+        item.shellSubCategory?.shellCategory?.shellPhase?.name ||
+        'Uncategorized Phase';
+      const category =
+        item.shellSubCategory?.shellCategory?.name || 'Uncategorized Category';
+      const subCategory =
+        item.shellSubCategory?.name || 'Uncategorized Subcategory';
 
-  //     const item = itemMap.get(row.itemId)!;
-  //     item.TotalQuantity += row.quantity;
-  //     item.Tasks.push({
-  //       Task: row.taskName,
-  //       User: row.userName,
-  //       Quantity: row.quantity,
-  //     });
-  //   }
+      const phaseNode = getOrCreate(root.children as TreeNode[], phase);
+      const categoryNode = getOrCreate(
+        phaseNode.children as TreeNode[],
+        category,
+      );
+      const subCategoryNode = getOrCreate(
+        categoryNode.children as TreeNode[],
+        subCategory,
+      );
 
-  //   const excelRows: Record<string, any>[] = [];
+      const itemNode: TreeNode = {
+        id: `${item.description} (${item.unit})`,
+        children: [],
+      };
 
-  //   for (const [, item] of itemMap.entries()) {
-  //     // Item summary row
-  //     excelRows.push({
-  //       Phase: item.Phase,
-  //       Category: item.Category,
-  //       Subcategory: item.Subcategory,
-  //       'Item Description': item.Description,
-  //       References: item.References,
-  //       ID: item.ID,
-  //       Unit: item.Unit,
-  //       'Total Quantity': item.TotalQuantity,
-  //       Task: '',
-  //       User: '',
-  //       Quantity: '',
-  //     });
+      // Add quantity leaves only if usage exists
+      if (usage) {
+        for (const t of usage.tasks) {
+          itemNode.children.push({
+            id: `${t.taskName} - ${t.userName}`,
+            quantity: t.quantity,
+          } as TreeLeaf);
+        }
+      }
 
-  //     // Breakdown rows
-  //     for (const task of item.Tasks) {
-  //       excelRows.push({
-  //         Phase: '',
-  //         Category: '',
-  //         Subcategory: '',
-  //         'Item Description': '',
-  //         References: '',
-  //         ID: '',
-  //         Unit: '',
-  //         'Total Quantity': '',
-  //         Task: task.Task,
-  //         User: task.User,
-  //         Quantity: task.Quantity,
-  //       });
-  //     }
+      subCategoryNode.children.push(itemNode);
+    }
 
-  //     excelRows.push({}); // empty spacer row
-  //   }
-
-  //   const worksheet = XLSX.utils.json_to_sheet(excelRows);
-  //   const workbook = XLSX.utils.book_new();
-  //   XLSX.utils.book_append_sheet(workbook, worksheet, 'Detailed Usage');
-
-  //   const buffer = XLSX.write(workbook, {
-  //     bookType: 'xlsx',
-  //     type: 'buffer',
-  //   }) as Buffer;
-
-  //   return buffer;
-  // }
-
-  // async generateShellScheduleForASpecificProject(
-  //   projectId: string,
-  // ): Promise<Buffer> {
-  //   const project = await this.projetService.getOne(projectId);
-  //   if (!project) throw new BadRequestException('Project not found');
-
-  //   const tasks = await this.taskService.findWhere({
-  //     project: { id: projectId },
-  //   });
-  //   const taskIds = tasks.map((task) => task.id);
-  //   if (!taskIds.length) {
-  //     throw new BadRequestException('No tasks found for this project');
-  //   }
-
-  //   // Get all item-task-quantity records where the task belongs to this project
-  //   const allQuantities =
-  //     await this.quantitiesService.findWhereItemTaskToQuantity({
-  //       task: { id: In(taskIds) },
-  //     });
-
-  //   // Get all ShellItems (not filtered by usage)
-  //   const allItems = await this.shellService.findAllItems();
-
-  //   // Prepare a lookup of usage per item
-  //   const usageMap = new Map<
-  //     string,
-  //     {
-  //       total: number;
-  //       tasks: { Task: string; User: string; Quantity: number }[];
-  //     }
-  //   >();
-
-  //   for (const qty of allQuantities) {
-  //     const itemId = qty.item.id;
-  //     if (!usageMap.has(itemId)) {
-  //       usageMap.set(itemId, { total: 0, tasks: [] });
-  //     }
-  //     const entry = usageMap.get(itemId)!;
-  //     entry.total += qty.amount;
-  //     entry.tasks.push({
-  //       Task: qty.task.name,
-  //       User: qty.quantity.createdBy?.userName || 'Unknown',
-  //       Quantity: qty.amount,
-  //     });
-  //   }
-
-  //   // Build Excel rows
-  //   const excelRows: Record<string, any>[] = [];
-
-  //   for (const item of allItems) {
-  //     const usage = usageMap.get(item.id);
-
-  //     const phase =
-  //       item.shellSubCategory?.shellCategory?.shellPhase?.name || '';
-  //     const category = item.shellSubCategory?.shellCategory?.name || '';
-  //     const subCategory = item.shellSubCategory?.name || '';
-  //     const references = item.references?.join(', ') || '';
-  //     const totalQuantity = usage?.total || 0;
-  //     const unit = item.unit || '';
-
-  //     // Summary row
-  //     excelRows.push({
-  //       Phase: phase,
-  //       Category: category,
-  //       Subcategory: subCategory,
-  //       'Item Description': item.description,
-  //       References: references,
-  //       ID: item.identifierId,
-  //       Unit: unit,
-  //       'Total Quantity': totalQuantity,
-  //       Task: '',
-  //       User: '',
-  //       Quantity: '',
-  //     });
-
-  //     // Breakdown rows
-  //     if (usage?.tasks?.length) {
-  //       for (const task of usage.tasks) {
-  //         excelRows.push({
-  //           Phase: '',
-  //           Category: '',
-  //           Subcategory: '',
-  //           'Item Description': '',
-  //           References: '',
-  //           ID: '',
-  //           Unit: '',
-  //           'Total Quantity': '',
-  //           Task: task.Task,
-  //           User: task.User,
-  //           Quantity: task.Quantity,
-  //         });
-  //       }
-  //     }
-
-  //     // Spacer row
-  //     excelRows.push({});
-  //   }
-
-  //   const worksheet = XLSX.utils.json_to_sheet(excelRows);
-  //   const workbook = XLSX.utils.book_new();
-  //   XLSX.utils.book_append_sheet(workbook, worksheet, 'Shell Schedule');
-
-  //   const buffer = XLSX.write(workbook, {
-  //     bookType: 'xlsx',
-  //     type: 'buffer',
-  //   }) as Buffer;
-
-  //   return buffer;
-  // }
+    return root;
+  }
 
   async generateShellScheduleForASpecificProject(
     projectId: string,
@@ -574,13 +399,6 @@ export class ReportsService {
         Quantity: qty.amount,
       });
     }
-
-    // Sort items to ensure grouping by phase > category > subcategory
-    // const sortedItems = [...allItems].sort((a, b) => {
-    //   const getKey = (item: ShellItem) =>
-    //     `${item.shellSubCategory?.shellCategory?.shellPhase?.name || ''}__${item.shellSubCategory?.shellCategory?.name || ''}__${item.shellSubCategory?.name || ''}`;
-    //   return getKey(a).localeCompare(getKey(b));
-    // });
 
     const excelRows: Record<string, any>[] = [];
 
